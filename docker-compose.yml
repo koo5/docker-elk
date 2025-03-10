@@ -104,6 +104,7 @@ services:
       - elasticsearch
     restart: unless-stopped
 
+
 networks:
   elk:
     driver: bridge
