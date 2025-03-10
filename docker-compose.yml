@@ -104,6 +104,52 @@ services:
       - elasticsearch
     restart: unless-stopped
 
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:${ELASTIC_VERSION}
+    volumes:
+      - ./apm-server/config/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro,Z
+    ports:
+      - 8200:8200
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - kibana
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-collector/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro,Z
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - 4317:4317   # OTLP gRPC
+      - 4318:4318   # OTLP HTTP
+      - 8888:8888   # Metrics
+    networks:
+      - elk
+    depends_on:
+      - apm-server
+    restart: unless-stopped
+
+  js-service:
+    build:
+      context: ./js-service
+    environment:
+      - NODE_ENV=development
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    ports:
+      - 3000:3000
+    networks:
+      - elk
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
 
 networks:
   elk:
