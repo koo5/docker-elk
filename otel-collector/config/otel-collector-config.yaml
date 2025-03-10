@@ -10,26 +10,42 @@ processors:
   batch:
     timeout: 1s
     send_batch_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 100
+  resource:
+    attributes:
+      - key: service.name
+        action: upsert
+        value: "otel-collector"
 
 exporters:
   logging:
     loglevel: debug
+    sampling_initial: 5
+    sampling_thereafter: 200
   otlphttp:
     endpoint: http://apm-server:8200
     tls:
       insecure: true
+    headers:
+      # Add Elastic APM specific headers
+      "Content-Type": "application/vnd.elastic.opentelemetry.v1+json"
 
 service:
   pipelines:
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch, resource]
       exporters: [logging, otlphttp]
     metrics:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch, resource]
       exporters: [logging, otlphttp]
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter, batch, resource]
       exporters: [logging, otlphttp]
+  telemetry:
+    logs:
+      level: debug
