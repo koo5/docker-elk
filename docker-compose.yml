@@ -35,8 +35,7 @@ services:
       HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
       MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
       BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
+    network_mode: host
     depends_on:
       - elasticsearch
 
@@ -61,8 +60,7 @@ services:
       # Use single node discovery in order to disable production mode and avoid bootstrap checks.
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
-    networks:
-      - elk
+    network_mode: host
     restart: unless-stopped
 
   logstash:
@@ -81,8 +79,7 @@ services:
     environment:
       LS_JAVA_OPTS: -Xms256m -Xmx256m
       LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
-    networks:
-      - elk
+    network_mode: host
     depends_on:
       - elasticsearch
     restart: unless-stopped
@@ -98,15 +95,10 @@ services:
       - 5601:5601
     environment:
       KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
-    networks:
-      - elk
+    network_mode: host
     depends_on:
       - elasticsearch
     restart: unless-stopped
-
-networks:
-  elk:
-    driver: bridge
 
 volumes:
   elasticsearch:
